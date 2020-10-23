@@ -5,8 +5,6 @@
 #include <tuple>
 #include <vector>
 
-using SudokuSquare = int[3][3];
-
 class Sudoku
 {
 public:
@@ -19,10 +17,14 @@ private:
     Sudoku() = default;
 
 private:
-    std::tuple<int, int, int, int> MapToSquare(int row, int col) const;
+    void CheckRowColInPlace(int row, int col) const;
+    void CheckSudokuInPlace() const;
+    void CheckRowsInPlace() const;
+    void CheckColsInPlace() const;
+    void CheckSquareInPlace(int row_begin, int row_end, int col_begin, int col_end, const std::string& square_name) const;
 
 private:
-    SudokuSquare m_sudoku[3][3];
+    int m_sudoku[9][9];
 };
 
 std::ostream& operator<< (std::ostream& out, const Sudoku& square);
