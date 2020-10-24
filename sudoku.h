@@ -10,7 +10,6 @@ class Sudoku
 public:
     explicit Sudoku(const std::vector<int>& values);
 
-    void NextMove();
     void Solve();
 
     int& operator() (int row, int col);
@@ -46,11 +45,24 @@ private:
     std::tuple<bool, std::string> IsColValid(int col) const;
     std::tuple<bool, std::string> IsSquareValid(const SudokuSquare& square) const;
 
-    int MostPopularNumber() const;
+    struct SudokuPopularity {
+        int number = 0;
+        int popularity = 0;
+
+        SudokuPopularity() = default;
+    };
+
+    bool SimplePermutation(int number);
+
+    bool HasSquareNumber(const SudokuSquare& square, int number);
+    bool HasRowNumber(int row, int number);
+    bool HasColNumber(int col, int number);
+    std::tuple<bool, int, int> FindRowColInSquareForNumber(const SudokuSquare& square, int number);
+    void IncreasePopularity(int number, int increment = 1);
 
 private:
     SudokuSquare m_squares[9];
-    int m_popularity[9];
+    SudokuPopularity m_popularity[9];
     int m_sudoku[9][9];
 };
 

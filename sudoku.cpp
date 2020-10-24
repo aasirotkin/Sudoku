@@ -14,15 +14,39 @@ Sudoku::Sudoku(const std::vector<int>& values)
     CheckSudokuInPlace();
 }
 
-void Sudoku::NextMove()
-{
-    int popular_number = MostPopularNumber();
-    std::cout << popular_number << std::endl;
-}
-
 void Sudoku::Solve()
 {
-    NextMove();
+    bool res = true;
+    while (res == true &&
+        !std::all_of(std::begin(m_popularity), std::end(m_popularity),
+            [](const SudokuPopularity& popularity) { return popularity.popularity == 9; })) {
+
+        //std::cout << (*this) << std::endl;
+
+        std::sort(std::begin(m_popularity), std::end(m_popularity),
+            [](const SudokuPopularity& lhs, const SudokuPopularity& rhs) {
+                if (lhs.popularity == rhs.popularity) {
+                    return lhs.number < rhs.number;
+                }
+                else {
+                    return lhs.popularity > rhs.popularity;
+                } });
+
+        res = false;
+
+        for (auto [number, popularity] : m_popularity) {
+            if (popularity != 9) {
+                if (SimplePermutation(number)) {
+                    if (res == false) {
+                        res = true;
+                    }
+                    //std::cout << "Number "s << number << " was added"s << std::endl;
+                }
+            }
+        }
+    }
+
+    CheckSudokuInPlace();
 }
 
 int& Sudoku::operator()(int row, int col) {
@@ -64,7 +88,10 @@ void Sudoku::CreateSquares()
 
 void Sudoku::CreatePopularity()
 {
-    std::fill_n(std::begin(m_popularity), 9, 0);
+    std::fill(std::begin(m_popularity), std::end(m_popularity), SudokuPopularity());
+    for (int index = 0; index < 9; ++index) {
+        m_popularity[index].number = index + 1;
+    }
     for (int row = 0; row < 9; ++row) {
         for (int col = 0; col < 9; ++col) {
             int value = m_sudoku[row][col];
@@ -72,7 +99,7 @@ void Sudoku::CreatePopularity()
                 continue;
             }
             int index = value - 1;
-            m_popularity[index]++;
+            m_popularity[index].popularity++;
         }
     }
 }
@@ -204,8 +231,93 @@ std::tuple<bool, std::string> Sudoku::IsSquareValid(const SudokuSquare& square) 
     return { true, ""s };
 }
 
-int Sudoku::MostPopularNumber() const {
-    return (std::max_element(std::begin(m_popularity), std::end(m_popularity)) - std::begin(m_popularity)) + 1;
+bool Sudoku::SimplePermutation(int number)
+{
+    bool res = false;
+    for (const auto& square : m_squares) {
+        if (!HasSquareNumber(square, number)) {
+            auto [isFound, row, col] = FindRowColInSquareForNumber(square, number);
+            if (isFound) {
+                this->operator()(row, col) = number;
+                IncreasePopularity(number);
+                res = true;
+            }
+        }
+    }
+    return res;
+}
+
+bool Sudoku::HasSquareNumber(const SudokuSquare& square, int number)
+{
+    for (int row = square.row_begin; row < square.row_end; ++row) {
+        for (int col = square.col_begin; col < square.col_end; ++col) {
+            if (m_sudoku[row][col] == number) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Sudoku::HasRowNumber(int row, int number)
+{
+    for (int col = 0; col < 9; ++col) {
+        if (m_sudoku[row][col] == number) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Sudoku::HasColNumber(int col, int number)
+{
+    for (int row = 0; row < 9; ++row) {
+        if (m_sudoku[row][col] == number) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::tuple<bool, int, int> Sudoku::FindRowColInSquareForNumber(const SudokuSquare& square, int number)
+{
+    bool exit = false;
+    bool is_found = false;
+    int found_row = 0;
+    int found_col = 0;
+    for (int row = square.row_begin; row < square.row_end; ++row) {
+        if (HasRowNumber(row, number)) {
+            continue;
+        }
+        for (int col = square.col_begin; col < square.col_end; ++col) {
+            if (m_sudoku[row][col] == 0) {
+                if (!HasColNumber(col, number)) {
+                    if (is_found) {
+                        is_found = false;
+                        exit = true;
+                        break;
+                    }
+                    is_found = true;
+                    found_row = row;
+                    found_col = col;
+                }
+            }
+        }
+        if (exit) {
+            break;
+        }
+    }
+    return { is_found, found_row, found_col };
+}
+
+void Sudoku::IncreasePopularity(int number, int increment)
+{
+    for (auto& sudoku_popularity : m_popularity) {
+        if (sudoku_popularity.number == number) {
+            sudoku_popularity.popularity += increment;
+            break;
+        }
+    }
 }
 
 std::ostream& operator<< (std::ostream& out, const Sudoku& sudoku) {

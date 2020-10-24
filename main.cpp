@@ -23,9 +23,9 @@ int main()
 
     try {
         Sudoku sudoku(sudoku_test_data);
-        cout << sudoku;
+        cout << sudoku << endl;
         sudoku.Solve();
-        cout << sudoku;
+        cout << sudoku << endl;
     }
     catch (const invalid_argument& error) {
         cout << "Error: "s << error.what() << endl;
