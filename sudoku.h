@@ -22,7 +22,7 @@ SudokuError operator+ (const SudokuError& lhs, const SudokuError& rhs);
 struct SudokuResult
 {
     SudokuError error = SudokuError();
-    std::vector<std::string> solutions_steps;
+    std::vector<std::string> solution_steps;
 
     SudokuResult() = default;
 

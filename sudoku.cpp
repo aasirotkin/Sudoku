@@ -28,10 +28,9 @@ SudokuError operator+(const SudokuError& lhs, const SudokuError& rhs)
 
 void SudokuResult::Print() const
 {
-    for (size_t i = 0; i < solutions_steps.size(); ++i) {
-        std::cout << i << ") "s << solutions_steps.at(i) << std::endl;
+    for (size_t i = 0; i < solution_steps.size(); ++i) {
+        std::cout << i << ") "s << solution_steps.at(i) << std::endl;
     }
-    std::cout << std::endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -328,7 +327,7 @@ SudokuResult SudokuSolver::Solve()
         res = false;
 
         for (auto [number, popularity] : m_number_popularity) {
-            if (SolveCrossingOut(number, result.solutions_steps)) {
+            if (SolveCrossingOut(number, result.solution_steps)) {
                 res = true;
             }
         }

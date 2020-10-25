@@ -25,15 +25,22 @@ int main()
         Sudoku sudoku(sudoku_test_data);
         cout << "Input:"s << endl;
         cout << sudoku << endl;
+
         SudokuSolver solver(sudoku);
         SudokuResult result = solver.Solve();
-        cout << "Solution:"s << endl;
-        result.Print();
+
+        if (!result.solution_steps.empty()) {
+            cout << "Solution steps:"s << endl;
+            result.Print();
+            cout << endl;
+        }
+
         cout << "Result:"s << endl;
         cout << sudoku << endl;
+
         if (!result) {
-            cout << endl << "Errors:"s << endl;
-            cout << result.error << endl;
+            cout << "Errors:"s << endl;
+            cout << result.error.name << endl;
         }
     }
     catch (const invalid_argument& error) {
