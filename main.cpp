@@ -23,9 +23,18 @@ int main()
 
     try {
         Sudoku sudoku(sudoku_test_data);
+        cout << "Input:"s << endl;
         cout << sudoku << endl;
-        sudoku.Solve();
+        SudokuSolver solver(sudoku);
+        SudokuResult result = solver.Solve();
+        cout << "Solution:"s << endl;
+        result.Print();
+        cout << "Result:"s << endl;
         cout << sudoku << endl;
+        if (!result) {
+            cout << endl << "Errors:"s << endl;
+            cout << result.error << endl;
+        }
     }
     catch (const invalid_argument& error) {
         cout << "Error: "s << error.what() << endl;

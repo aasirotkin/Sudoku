@@ -6,57 +6,101 @@
 
 using namespace std::string_literals;
 
+SudokuError operator+(const SudokuError& lhs, const SudokuError& rhs)
+{
+    SudokuError error;
+    error.is_valid = lhs.is_valid && rhs.is_valid;
+    if (!lhs) {
+        error.name += lhs.name;
+        if (!rhs) {
+            error.name += std::string("\n") + rhs.name;
+        }
+    }
+    else {
+        if (!rhs) {
+            error.name += rhs.name;
+        }
+    }
+    return error;
+}
+
+// ----------------------------------------------------------------------------
+
+void SudokuResult::Print() const
+{
+    for (size_t i = 0; i < solutions_steps.size(); ++i) {
+        std::cout << i << ") "s << solutions_steps.at(i) << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+// ----------------------------------------------------------------------------
+
+std::string SudokuSquare::Str() const
+{
+    return "{ "s + std::to_string(row_begin) + ", "s + std::to_string(row_end) + ", "s
+        + std::to_string(col_begin) + ", "s + std::to_string(col_end) + " }"s;
+}
+
+// ----------------------------------------------------------------------------
+
+SudokuGrid::SudokuGrid()
+{
+    CreateSquares();
+}
+
+int& SudokuGrid::operator()(int row, int col) {
+    return m_sudoku[Index(row, col)];
+}
+
+const int& SudokuGrid::operator()(int row, int col) const {
+    return m_sudoku.at(Index(row, col));
+}
+
+void SudokuGrid::PushBack(int number)
+{
+    if (number < 0 || number > 9) {
+        throw std::invalid_argument("Invalid number " + std::to_string(number));
+    }
+    m_sudoku.push_back(number);
+}
+
+const std::vector<SudokuSquare>& SudokuGrid::Squares() const
+{
+    return m_squares;
+}
+
+int SudokuGrid::Index(int row, int col) const
+{
+    IsRowColValid(row, col);
+    return row * 9 + col;
+}
+
+void SudokuGrid::CreateSquares()
+{
+    for (int row = 0; row < 9; row = row + 3) {
+        for (int col = 0; col < 9; col = col + 3) {
+            m_squares.push_back({ row, row + 3, col, col + 3 });
+        }
+    }
+}
+
+void SudokuGrid::IsRowColValid(int row, int col) const
+{
+    if (row < 0 || row > 8) {
+        throw std::invalid_argument("Row " + std::to_string(row) + " must be in [0:9) range"s);
+    }
+    if (col < 0 || col > 8) {
+        throw std::invalid_argument("Col " + std::to_string(col) + " must be in [0:9) range"s);
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+
 Sudoku::Sudoku(const std::vector<int>& values)
 {
     CreateSudoku(values);
-    CreatePopularity();
-    CreateSquares();
-    CheckSudokuInPlace();
-}
-
-void Sudoku::Solve()
-{
-    bool res = true;
-    while (res == true &&
-        !std::all_of(std::begin(m_popularity), std::end(m_popularity),
-            [](const SudokuPopularity& popularity) { return popularity.popularity == 9; })) {
-
-        //std::cout << (*this) << std::endl;
-
-        std::sort(std::begin(m_popularity), std::end(m_popularity),
-            [](const SudokuPopularity& lhs, const SudokuPopularity& rhs) {
-                if (lhs.popularity == rhs.popularity) {
-                    return lhs.number < rhs.number;
-                }
-                else {
-                    return lhs.popularity > rhs.popularity;
-                } });
-
-        res = false;
-
-        for (auto [number, popularity] : m_popularity) {
-            if (popularity != 9) {
-                if (SimplePermutation(number)) {
-                    if (res == false) {
-                        res = true;
-                    }
-                    //std::cout << "Number "s << number << " was added"s << std::endl;
-                }
-            }
-        }
-    }
-
-    CheckSudokuInPlace();
-}
-
-int& Sudoku::operator()(int row, int col) {
-    CheckRowColInPlace(row, col);
-    return m_sudoku[row][col];
-}
-
-const int& Sudoku::operator()(int row, int col) const {
-    CheckRowColInPlace(row, col);
-    return m_sudoku[row][col];
 }
 
 void Sudoku::CreateSudoku(const std::vector<int>& values)
@@ -64,116 +108,61 @@ void Sudoku::CreateSudoku(const std::vector<int>& values)
     if (values.size() != 81) {
         throw std::invalid_argument("Input vector size must be 81"s);
     }
-    for (int i = 0; i < 81; ++i) {
-        int value = values.at(i);
-        int row = i / 9;
-        int col = i - row * 9;
-        if (value < 0 || value > 9) {
-            throw std::invalid_argument("Invalid number " + std::to_string(value) + " in row "s + std::to_string(row) + " col "s + std::to_string(col));
-        }
-        this->operator()(row, col) = value;
+    for (int number : values) {
+        m_grid.PushBack(number);
     }
 }
 
-void Sudoku::CreateSquares()
+SudokuError Sudoku::IsSudokuValid() const
 {
-    int square_index = 0;
-    for (int row = 0; row < 9; row = row + 3) {
-        for (int col = 0; col < 9; col = col + 3) {
-            m_squares[square_index] = { row, row + 3, col, col + 3 };
-            ++square_index;
-        }
-    }
+    SudokuError rows_error = IsRowsValid();
+    SudokuError cols_error = IsColsValid();
+    SudokuError squares_error = IsSquaresValid();
+    return rows_error + cols_error + squares_error;
 }
 
-void Sudoku::CreatePopularity()
+SudokuError Sudoku::IsRowsValid() const
 {
-    std::fill(std::begin(m_popularity), std::end(m_popularity), SudokuPopularity());
-    for (int index = 0; index < 9; ++index) {
-        m_popularity[index].number = index + 1;
-    }
+    SudokuError error;
     for (int row = 0; row < 9; ++row) {
-        for (int col = 0; col < 9; ++col) {
-            int value = m_sudoku[row][col];
-            if (value == 0) {
-                continue;
-            }
-            int index = value - 1;
-            m_popularity[index].popularity++;
+        error = IsRowValid(row);
+        if (!error) {
+            break;
         }
     }
+    return error;
 }
 
-void Sudoku::CheckRowInPlace(int row) const
+SudokuError Sudoku::IsColsValid() const
 {
-    if (row < 0 || row > 8) {
-        throw std::invalid_argument("Row " + std::to_string(row) + " must be in [0:9) range"s);
-    }
-}
-
-void Sudoku::CheckColInPlace(int col) const
-{
-    if (col < 0 || col > 8) {
-        throw std::invalid_argument("Col " + std::to_string(col) + " must be in [0:9) range"s);
-    }
-}
-
-void Sudoku::CheckRowColInPlace(int row, int col) const
-{
-    CheckRowInPlace(row);
-    CheckColInPlace(col);
-}
-
-void Sudoku::CheckSudokuInPlace() const
-{
-    CheckRowsInPlace();
-    CheckColsInPlace();
-    CheckSquaresInPlace();
-}
-
-void Sudoku::CheckRowsInPlace() const
-{
-    for (int row = 0; row < 9; ++row) {
-        auto [isValid, error] = IsRowValid(row);
-        if (!isValid) {
-            throw std::invalid_argument(error);
-        }
-    }
-}
-
-void Sudoku::CheckColsInPlace() const
-{
+    SudokuError error;
     for (int col = 0; col < 9; ++col) {
-        auto [isValid, error] = IsColValid(col);
-        if (!isValid) {
-            throw std::invalid_argument(error);
+        error = IsColValid(col);
+        if (!error) {
+            break;
         }
     }
+    return error;
 }
 
-void Sudoku::CheckSquaresInPlace() const
+SudokuError Sudoku::IsSquaresValid() const
 {
-    for (auto i = std::begin(m_squares); i != std::end(m_squares); ++i) {
-        auto [isValid, error] = IsSquareValid(*i);
-        if (!isValid) {
-            throw std::invalid_argument(error);
+    SudokuError error;
+    for (const SudokuSquare& square : m_grid.Squares()) {
+        error = IsSquareValid(square);
+        if (!error) {
+            break;
         }
     }
+    return error;
 }
 
-std::string Sudoku::SudokuSquare::Str() const
+SudokuError Sudoku::IsRowValid(int row) const
 {
-    return "{ "s + std::to_string(row_begin) + ", "s + std::to_string(row_end) + ", "s
-        + std::to_string(col_begin) + ", "s + std::to_string(col_end) + " }"s;
-}
-
-std::tuple<bool, std::string> Sudoku::IsRowValid(int row) const
-{
-    CheckRowInPlace(row);
     int col_values[9];
     std::fill_n(std::begin(col_values), 9, 0);
     for (int col = 0; col < 9; ++col) {
-        int value = m_sudoku[row][col];
+        int value = m_grid(row, col);
         if (value == 0) {
             continue;
         }
@@ -188,13 +177,12 @@ std::tuple<bool, std::string> Sudoku::IsRowValid(int row) const
     return { true, ""s };
 }
 
-std::tuple<bool, std::string> Sudoku::IsColValid(int col) const
+SudokuError Sudoku::IsColValid(int col) const
 {
-    CheckColInPlace(col);
     int row_values[9];
     std::fill_n(std::begin(row_values), 9, 0);
     for (int row = 0; row < 9; ++row) {
-        int value = m_sudoku[row][col];
+        int value = m_grid(row, col);
         if (value == 0) {
             continue;
         }
@@ -209,13 +197,13 @@ std::tuple<bool, std::string> Sudoku::IsColValid(int col) const
     return { true, ""s };
 }
 
-std::tuple<bool, std::string> Sudoku::IsSquareValid(const SudokuSquare& square) const
+SudokuError Sudoku::IsSquareValid(const SudokuSquare& square) const
 {
     int square_values[9];
     std::fill_n(std::begin(square_values), 9, 0);
     for (int row = square.row_begin; row < square.row_end; ++row) {
         for (int col = square.col_begin; col < square.col_end; ++col) {
-            int value = m_sudoku[row][col];
+            int value = m_grid(row, col);
             if (value == 0) {
                 continue;
             }
@@ -231,38 +219,10 @@ std::tuple<bool, std::string> Sudoku::IsSquareValid(const SudokuSquare& square) 
     return { true, ""s };
 }
 
-bool Sudoku::SimplePermutation(int number)
-{
-    bool res = false;
-    for (const auto& square : m_squares) {
-        if (!HasSquareNumber(square, number)) {
-            auto [isFound, row, col] = FindRowColInSquareForNumber(square, number);
-            if (isFound) {
-                this->operator()(row, col) = number;
-                IncreasePopularity(number);
-                res = true;
-            }
-        }
-    }
-    return res;
-}
-
-bool Sudoku::HasSquareNumber(const SudokuSquare& square, int number)
-{
-    for (int row = square.row_begin; row < square.row_end; ++row) {
-        for (int col = square.col_begin; col < square.col_end; ++col) {
-            if (m_sudoku[row][col] == number) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 bool Sudoku::HasRowNumber(int row, int number)
 {
     for (int col = 0; col < 9; ++col) {
-        if (m_sudoku[row][col] == number) {
+        if (m_grid(row, col) == number) {
             return true;
         }
     }
@@ -272,70 +232,151 @@ bool Sudoku::HasRowNumber(int row, int number)
 bool Sudoku::HasColNumber(int col, int number)
 {
     for (int row = 0; row < 9; ++row) {
-        if (m_sudoku[row][col] == number) {
+        if (m_grid(row, col) == number) {
             return true;
         }
     }
     return false;
 }
 
-std::tuple<bool, int, int> Sudoku::FindRowColInSquareForNumber(const SudokuSquare& square, int number)
+bool Sudoku::HasSquareNumber(const SudokuSquare& square, int number)
 {
-    bool exit = false;
-    bool is_found = false;
-    int found_row = 0;
-    int found_col = 0;
+    for (int row = square.row_begin; row < square.row_end; ++row) {
+        for (int col = square.col_begin; col < square.col_end; ++col) {
+            if (m_grid(row, col) == number) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+Sudoku::SudokuFoundPlace Sudoku::SearchForSinglePlaceInSquare(const SudokuSquare& square, int number)
+{
+    SudokuFoundPlace place = { false, 0, 0 };
     for (int row = square.row_begin; row < square.row_end; ++row) {
         if (HasRowNumber(row, number)) {
             continue;
         }
         for (int col = square.col_begin; col < square.col_end; ++col) {
-            if (m_sudoku[row][col] == 0) {
+            if (m_grid(row, col) == 0) {
                 if (!HasColNumber(col, number)) {
-                    if (is_found) {
-                        is_found = false;
-                        exit = true;
-                        break;
+                    if (!place) {
+                        place = { true, row, col };
                     }
-                    is_found = true;
-                    found_row = row;
-                    found_col = col;
+                    else {
+                        return { false, 0, 0 };
+                    }
                 }
             }
         }
-        if (exit) {
-            break;
-        }
     }
-    return { is_found, found_row, found_col };
-}
-
-void Sudoku::IncreasePopularity(int number, int increment)
-{
-    for (auto& sudoku_popularity : m_popularity) {
-        if (sudoku_popularity.number == number) {
-            sudoku_popularity.popularity += increment;
-            break;
-        }
-    }
+    return place;
 }
 
 std::ostream& operator<< (std::ostream& out, const Sudoku& sudoku) {
     const std::string row_splitter("-------------------------------");
     out << row_splitter << std::endl;
-    for (int i = 0; i < 9; ++i) {
-        if (i > 0 && i % 3 == 0) {
+    for (int row = 0; row < 9; ++row) {
+        if (row > 0 && row % 3 == 0) {
             out << row_splitter << std::endl;
         }
         out << "|"s;
-        for (int j = 0; j < 9; ++j) {
-            if (j > 0 && j % 3 == 0) {
+        for (int col = 0; col < 9; ++col) {
+            if (col > 0 && col % 3 == 0) {
                 out << "|"s;
             }
-            out << " "s << sudoku(i, j) << " "s;
+            out << " "s << sudoku(row, col) << " "s;
         }
         out << "|"s << std::endl;
     }
     out << row_splitter << std::endl;
     return out;
+}
+
+// ----------------------------------------------------------------------------
+
+SudokuSolver::SudokuSolver(Sudoku& sudoku)
+    : m_sudoku(sudoku)
+{
+    CreatePopularity(sudoku);
+}
+
+SudokuResult SudokuSolver::Solve()
+{
+    SudokuResult result;
+    result.error = m_sudoku.IsSudokuValid();
+    if (!result.error) {
+        return result;
+    }
+    bool res = true;
+    while (res == true && !m_number_popularity.empty()) {
+        m_number_popularity.erase(
+            std::remove_if(m_number_popularity.begin(), m_number_popularity.end(),
+                [](const std::pair<int, int>& number_popularity) { return number_popularity.second == 9; }),
+            m_number_popularity.end());
+
+        std::sort(m_number_popularity.begin(), m_number_popularity.end(),
+            [](const std::pair<int, int>& lhs, const std::pair<int, int>& rhs) {
+                if (lhs.second == rhs.second) {
+                    return lhs.first < rhs.first;
+                }
+                else {
+                    return lhs.second > rhs.second;
+                } });
+
+        res = false;
+
+        for (auto [number, popularity] : m_number_popularity) {
+            if (SolveCrossingOut(number, result.solutions_steps)) {
+                res = true;
+            }
+        }
+    }
+
+    result.error = m_sudoku.IsSudokuValid();
+    return result;
+}
+
+void SudokuSolver::CreatePopularity(Sudoku& sudoku)
+{
+    for (int number = 1; number <= 9; ++number) {
+        m_number_popularity.push_back({ number, 0 });
+    }
+    for (int row = 0; row < 9; ++row) {
+        for (int col = 0; col < 9; ++col) {
+            int number = sudoku(row, col);
+            if (number == 0) {
+                continue;
+            }
+            m_number_popularity[number - 1].second += 1;
+        }
+    }
+}
+
+void SudokuSolver::IncreasePolularity(int number)
+{
+    for (auto& [value, popularity] : m_number_popularity) {
+        if (value == number) {
+            popularity++;
+            break;
+        }
+    }
+}
+
+bool SudokuSolver::SolveCrossingOut(int number, std::vector<std::string>& solutions)
+{
+    bool res = false;
+    for (const auto& square : m_sudoku.Squares()) {
+        if (!m_sudoku.HasSquareNumber(square, number)) {
+            Sudoku::SudokuFoundPlace place = m_sudoku.SearchForSinglePlaceInSquare(square, number);
+            if (place) {
+                m_sudoku(place.row, place.col) = number;
+                IncreasePolularity(number);
+                res = true;
+                solutions.push_back("Put number "s + std::to_string(number) + " in row "s + std::to_string(place.row) + " col "s + std::to_string(place.col));
+            }
+        }
+    }
+    return res;
 }
