@@ -58,6 +58,10 @@ public:
 
     const std::vector<SudokuSquare>& Squares() const;
 
+    const std::vector<int>& Values() const {
+        return m_sudoku;
+    }
+
 private:
     int Index(int row, int col) const;
     void CreateSquares();
@@ -67,6 +71,8 @@ private:
     std::vector<SudokuSquare> m_squares;
     std::vector<int> m_sudoku;
 };
+
+bool operator== (const SudokuGrid& lhs, const SudokuGrid& rhs);
 
 // ----------------------------------------------------------------------------
 
@@ -113,6 +119,10 @@ public:
         return m_grid.Squares();
     }
 
+    const SudokuGrid& Grid() const {
+        return m_grid;
+    }
+
 private:
     Sudoku() = default;
 
@@ -124,6 +134,8 @@ private:
 };
 
 std::ostream& operator<< (std::ostream& out, const Sudoku& sudoku);
+
+bool operator== (const Sudoku& lhs, const Sudoku& rhs);
 
 // ----------------------------------------------------------------------------
 

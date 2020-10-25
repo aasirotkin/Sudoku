@@ -94,6 +94,11 @@ void SudokuGrid::IsRowColValid(int row, int col) const
     }
 }
 
+bool operator==(const SudokuGrid& lhs, const SudokuGrid& rhs)
+{
+    return lhs.Values() == rhs.Values();
+}
+
 // ----------------------------------------------------------------------------
 
 
@@ -291,6 +296,11 @@ std::ostream& operator<< (std::ostream& out, const Sudoku& sudoku) {
     }
     out << row_splitter << std::endl;
     return out;
+}
+
+bool operator==(const Sudoku& lhs, const Sudoku& rhs)
+{
+    return lhs.Grid() == rhs.Grid();
 }
 
 // ----------------------------------------------------------------------------
