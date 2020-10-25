@@ -9,8 +9,17 @@
 
 using namespace std::string_literals;
 
-// http://www.sudoku-download.net/files/60_Sudokus_Pattern_Easy.pdf
-// http://www.sudoku-download.net/files/Solution_60_Sudokus_Pattern_Easy.pdf
+// easy: http://www.sudoku-download.net/files/60_Sudokus_Easy.pdf
+// esty solutions: http://www.sudoku-download.net/files/Solution_60_Sudokus_Easy.pdf
+
+// medium: http://www.sudoku-download.net/files/60_Sudokus_Medium.pdf
+// medium solutions: http://www.sudoku-download.net/files/Solution_60_Sudokus_Medium.pdf
+
+// hard: http://www.sudoku-download.net/files/60_Sudokus_Difficult.pdf
+// hard solutions: http://www.sudoku-download.net/files/Solution_60_Sudokus_Difficult.pdf
+
+// extream: http://www.sudoku-download.net/files/30_Sudokus_Very_Difficult.pdf
+// extream solutions: http://www.sudoku-download.net/files/Solution_30_Sudokus_Very_Difficult.pdf
 
 static SudokuTest::SudokuTestData data_easy = {
     { // 1
@@ -191,16 +200,124 @@ static SudokuTest::SudokuTestData data_easy = {
             8,3,6, 7,2,4, 1,5,9,
             4,1,9, 6,5,8, 2,3,7
         }
+    },
+
+    { // 7
+        {
+            0,0,0, 0,8,0, 0,0,9,
+            0,0,0, 4,2,6, 1,3,0,
+            0,0,0, 9,0,1, 5,0,6,
+
+            2,0,0, 8,3,0, 9,7,4,
+            3,0,9, 0,6,0, 0,8,0,
+            0,0,0, 2,9,4, 0,0,0,
+
+            0,5,6, 3,1,0, 0,0,0,
+            0,0,0, 0,0,0, 8,0,7,
+            0,8,4, 0,5,2, 0,1,0
+        },
+
+        {
+            6,1,2, 5,8,3, 7,4,9,
+            5,9,7, 4,2,6, 1,3,8,
+            4,3,8, 9,7,1, 5,2,6,
+
+            2,6,1, 8,3,5, 9,7,4,
+            3,4,9, 1,6,7, 2,8,5,
+            8,7,5, 2,9,4, 3,6,1,
+
+            7,5,6, 3,1,8, 4,9,2,
+            1,2,3, 6,4,9, 8,5,7,
+            9,8,4, 7,5,2, 6,1,3
+        }
     }
 };
 
 static SudokuTest::SudokuTestData data_medium = {
+    { // 1
+        {
+            0,2,0, 5,1,9, 0,0,0,
+            0,5,0, 7,0,0, 0,1,0,
+            0,6,0, 2,0,0, 9,0,0,
+
+            6,8,5, 0,2,3, 0,0,0,
+            0,0,0, 0,0,0, 8,0,2,
+            0,7,0, 1,4,0, 0,0,0,
+
+            7,0,1, 0,0,0, 0,5,9,
+            0,0,0, 0,0,1, 0,0,7,
+            0,3,0, 4,9,0, 0,2,1
+        },
+
+        {
+            8,2,3, 5,1,9, 7,4,6,
+            4,5,9, 7,3,6, 2,1,8,
+            1,6,7, 2,8,4, 9,3,5,
+
+            6,8,5, 9,2,3, 1,7,4,
+            3,1,4, 6,7,5, 8,9,2,
+            9,7,2, 1,4,8, 5,6,3,
+
+            7,4,1, 8,6,2, 3,5,9,
+            2,9,6, 3,5,1, 4,8,7,
+            5,3,8, 4,9,7, 6,2,1
+        }
+    }
 };
 
 static SudokuTest::SudokuTestData data_hard = {
+    { // 1
+        {
+            2,0,0,0,0,0,9,5,1,
+            0,0,0,0,0,0,0,0,7,
+            8,7,6,0,0,5,2,0,0,
+            3,0,4,0,2,8,0,0,0,
+            0,0,0,0,0,0,5,0,9,
+            0,0,5,0,0,1,3,0,4,
+            0,2,0,0,8,4,0,1,0,
+            0,0,0,0,1,0,0,9,8
+        },
+
+        {
+            2,4,3,8,7,6,9,5,1,
+            9,5,1,2,4,3,8,6,7,
+            8,7,6,1,9,5,2,4,3,
+            3,9,4,5,2,8,1,7,6,
+            1,6,2,4,3,7,5,8,9,
+            7,8,5,9,6,1,3,2,4,
+            6,2,9,3,8,4,7,1,5,
+            5,3,7,6,1,2,4,9,8,
+            4,1,8,7,5,9,6,3,2
+        }
+    }
 };
 
 static SudokuTest::SudokuTestData data_extream = {
+    { // 1
+        {
+            4,5,0,0,0,0,0,0,0,
+            0,0,2,0,7,0,6,3,0,
+            0,0,0,0,0,0,0,2,8,
+            0,0,0,9,5,0,0,0,0,
+            0,8,6,0,0,0,2,0,0,
+            0,2,0,6,0,0,7,5,0,
+            0,0,0,0,0,0,4,7,6,
+            0,7,0,0,4,5,0,0,0,
+            0,0,8,0,0,9,0,0,0
+        },
+
+        {
+            4,5,3,8,2,6,1,9,7,
+            8,9,2,5,7,1,6,3,4,
+            1,6,7,4,9,3,5,2,8,
+            7,1,4,9,5,2,8,6,3,
+            5,8,6,1,3,7,2,4,9,
+            3,2,9,6,8,4,7,5,1,
+            9,3,5,2,1,8,4,7,6,
+            6,7,1,3,4,5,9,8,2,
+            2,4,8,7,6,9,3,1,5
+        }
+    }
 };
 
 void SudokuTest::TestSudoku()
