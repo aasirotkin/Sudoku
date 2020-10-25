@@ -1,16 +1,18 @@
 #include "sudoku_test.h"
 
+#include "sudoku.h"
+
 #include <cassert>
+#include <iostream>
 #include <vector>
+#include <cstdlib>
 
-using SudokuInput = std::vector<int>;
-
-using SudokuTestData = std::vector<std::pair<SudokuInput, SudokuInput>>;
+using namespace std::string_literals;
 
 // http://www.sudoku-download.net/files/60_Sudokus_Pattern_Easy.pdf
 // http://www.sudoku-download.net/files/Solution_60_Sudokus_Pattern_Easy.pdf
 
-static SudokuTestData data_easy = {
+static SudokuTest::SudokuTestData data_easy = {
     { // 1
         {
             7,2,3, 0,0,0, 1,5,9,
@@ -192,13 +194,51 @@ static SudokuTestData data_easy = {
     }
 };
 
+static SudokuTest::SudokuTestData data_medium = {
+};
+
+static SudokuTest::SudokuTestData data_hard = {
+};
+
+static SudokuTest::SudokuTestData data_extream = {
+};
+
+void SudokuTest::TestSudoku()
+{
+    TestSudokuEasy();
+    TestSudokuMedium();
+    TestSudokuHard();
+    TestSudokuExtream();
+}
+
 void SudokuTest::TestSudokuEasy()
 {
-    for (const auto& [input_data, result_data] : data_easy) {
+    TestSudokuLocalData(data_easy, "TestSudokuEasy"s);
+}
+
+void SudokuTest::TestSudokuMedium()
+{
+    TestSudokuLocalData(data_medium, "TestSudokuMedium"s);
+}
+
+void SudokuTest::TestSudokuHard()
+{
+    TestSudokuLocalData(data_hard, "TestSudokuHard"s);
+}
+
+void SudokuTest::TestSudokuExtream()
+{
+    TestSudokuLocalData(data_extream, "TestSudokuExtream"s);
+}
+
+void SudokuTest::TestSudokuLocalData(const SudokuTestData& data, std::string& test_name)
+{
+    for (const auto& [input_data, result_data] : data) {
         Sudoku input(input_data);
         Sudoku result(result_data);
         SudokuSolver solver(input);
         solver.Solve();
         assert(input == result);
     }
+    std::cout << test_name << " Ok"s << std::endl;
 }

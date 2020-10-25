@@ -4,6 +4,6 @@ using namespace std;
 
 int main()
 {
-    SudokuTest::TestSudokuEasy();
+    SudokuTest::TestSudoku();
     return 0;
 }

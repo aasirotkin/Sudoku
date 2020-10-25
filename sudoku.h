@@ -11,7 +11,7 @@ struct SudokuError
     std::string name = std::string("");
 
     operator bool() const {
-        return is_valid;
+        return !is_valid;
     }
 };
 
@@ -32,6 +32,8 @@ struct SudokuResult
         return error;
     }
 };
+
+std::ostream& operator<< (std::ostream& out, const SudokuResult& result);
 
 // ----------------------------------------------------------------------------
 
@@ -74,20 +76,14 @@ private:
 
 bool operator== (const SudokuGrid& lhs, const SudokuGrid& rhs);
 
+std::ostream& operator<< (std::ostream& out, const SudokuGrid& grid);
+
 // ----------------------------------------------------------------------------
 
-class Sudoku
+class Sudoku : public SudokuGrid
 {
 public:
     explicit Sudoku(const std::vector<int>& values);
-
-    int operator() (int row, int col) const {
-        return m_grid(row, col);
-    }
-
-    int& operator() (int row, int col) {
-        return m_grid(row, col);
-    }
 
     SudokuError IsSudokuValid() const;
 
@@ -104,38 +100,23 @@ public:
     bool HasSquareNumber(const SudokuSquare& square, int number);
 
     struct SudokuFoundPlace {
-        bool has_found;
+        bool was_found;
         int row;
         int col;
 
         operator bool() const {
-            return has_found;
+            return was_found;
         }
     };
 
     SudokuFoundPlace SearchForSinglePlaceInSquare(const SudokuSquare& square, int number);
-
-    const std::vector<SudokuSquare>& Squares() const {
-        return m_grid.Squares();
-    }
-
-    const SudokuGrid& Grid() const {
-        return m_grid;
-    }
 
 private:
     Sudoku() = default;
 
 private:
     void CreateSudoku(const std::vector<int>& values);
-
-private:
-    SudokuGrid m_grid;
 };
-
-std::ostream& operator<< (std::ostream& out, const Sudoku& sudoku);
-
-bool operator== (const Sudoku& lhs, const Sudoku& rhs);
 
 // ----------------------------------------------------------------------------
 
