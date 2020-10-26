@@ -314,49 +314,7 @@ Sudoku::SudokuFoundPlace Sudoku::SearchForSinglePlaceInSquare(const SudokuSquare
 
 // ----------------------------------------------------------------------------
 
-SudokuSolver::SudokuSolver(Sudoku& sudoku)
-    : m_sudoku(sudoku)
-{
-    CreatePopularity(sudoku);
-}
-
-SudokuResult SudokuSolver::Solve()
-{
-    SudokuResult result;
-    result.error = m_sudoku.IsSudokuValid();
-    if (result.error) {
-        return result;
-    }
-    bool res = true;
-    while (res == true && !m_number_popularity.empty()) {
-        m_number_popularity.erase(
-            std::remove_if(m_number_popularity.begin(), m_number_popularity.end(),
-                [](const std::pair<int, int>& number_popularity) { return number_popularity.second == 9; }),
-            m_number_popularity.end());
-
-        std::sort(m_number_popularity.begin(), m_number_popularity.end(),
-            [](const std::pair<int, int>& lhs, const std::pair<int, int>& rhs) {
-                if (lhs.second == rhs.second) {
-                    return lhs.first < rhs.first;
-                }
-                else {
-                    return lhs.second > rhs.second;
-                } });
-
-        res = false;
-
-        for (auto [number, popularity] : m_number_popularity) {
-            if (SolveCrossingOut(number, result.solution_steps)) {
-                res = true;
-            }
-        }
-    }
-
-    result.error = m_sudoku.IsSudokuValid();
-    return result;
-}
-
-void SudokuSolver::CreatePopularity(Sudoku& sudoku)
+SudokuPopularity::SudokuPopularity(const Sudoku& sudoku)
 {
     for (int number = 1; number <= 9; ++number) {
         m_number_popularity.push_back({ number, 0 });
@@ -372,7 +330,27 @@ void SudokuSolver::CreatePopularity(Sudoku& sudoku)
     }
 }
 
-void SudokuSolver::IncreasePolularity(int number)
+void SudokuPopularity::SortPopularity()
+{
+    std::sort(m_number_popularity.begin(), m_number_popularity.end(),
+        [](const std::pair<int, int>& lhs, const std::pair<int, int>& rhs) {
+            if (lhs.second == rhs.second) {
+                return lhs.first < rhs.first;
+            }
+            else {
+                return lhs.second > rhs.second;
+            } });
+}
+
+void SudokuPopularity::ErasePopularity()
+{
+    m_number_popularity.erase(
+        std::remove_if(m_number_popularity.begin(), m_number_popularity.end(),
+            [](const std::pair<int, int>& number_popularity) { return number_popularity.second == 9; }),
+        m_number_popularity.end());
+}
+
+void SudokuPopularity::IncreasePolularity(int number)
 {
     for (auto& [value, popularity] : m_number_popularity) {
         if (value == number) {
@@ -380,6 +358,45 @@ void SudokuSolver::IncreasePolularity(int number)
             break;
         }
     }
+}
+
+// ----------------------------------------------------------------------------
+
+SudokuSolver::SudokuSolver(Sudoku& sudoku)
+    : m_sudoku(sudoku)
+    , m_popularity(sudoku)
+{
+
+}
+
+SudokuResult SudokuSolver::Solve()
+{
+    SudokuResult result;
+    result.error = m_sudoku.IsSudokuValid();
+    if (result.error) {
+        return result;
+    }
+    bool res = true;
+    while (res == true && !m_popularity.IsEmpty()) {
+        m_popularity.SortPopularity();
+
+        res = false;
+
+        for (auto [number, popularity] : m_popularity) {
+            if (SolveCrossingOut(number, result.solution_steps)) {
+                res = true;
+            }
+        }
+
+        m_popularity.ErasePopularity();
+    }
+
+    if (!res) {
+        std::cout << m_sudoku << std::endl;;
+    }
+
+    result.error = m_sudoku.IsSudokuValid();
+    return result;
 }
 
 bool SudokuSolver::SolveCrossingOut(int number, std::vector<std::string>& solutions)
@@ -390,7 +407,7 @@ bool SudokuSolver::SolveCrossingOut(int number, std::vector<std::string>& soluti
             Sudoku::SudokuFoundPlace place = m_sudoku.SearchForSinglePlaceInSquare(square, number);
             if (place) {
                 m_sudoku(place.row, place.col) = number;
-                IncreasePolularity(number);
+                m_popularity.IncreasePolularity(number);
                 res = true;
                 solutions.push_back("Put number "s + std::to_string(number) + " in row "s + std::to_string(place.row) + " col "s + std::to_string(place.col));
             }

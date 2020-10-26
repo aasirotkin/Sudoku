@@ -120,6 +120,33 @@ private:
 
 // ----------------------------------------------------------------------------
 
+class SudokuPopularity
+{
+public:
+    SudokuPopularity(const Sudoku& sudoku);
+
+    void SortPopularity();
+    void ErasePopularity();
+    void IncreasePolularity(int number);
+
+    bool IsEmpty() const {
+        return m_number_popularity.empty();
+    }
+
+    const auto begin() const {
+        return m_number_popularity.begin();
+    }
+
+    const auto end() const {
+        return m_number_popularity.end();
+    }
+
+private:
+    std::vector<std::pair<int, int>> m_number_popularity;
+};
+
+// ----------------------------------------------------------------------------
+
 class SudokuSolver
 {
 public:
@@ -128,14 +155,12 @@ public:
     SudokuResult Solve();
 
 private:
-    void CreatePopularity(Sudoku& sudoku);
-    void IncreasePolularity(int number);
 
     bool SolveCrossingOut(int number, std::vector<std::string>& solutions);
 
 private:
     Sudoku& m_sudoku;
-    std::vector<std::pair<int, int>> m_number_popularity;
+    SudokuPopularity m_popularity;
 };
 
 
