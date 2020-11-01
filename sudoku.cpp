@@ -85,7 +85,7 @@ void SudokuGrid::FillGrid(const std::vector<int>& values)
     }
     for (int v : values) {
         if (v < 0 || v > 9) {
-            throw std::invalid_argument("Invalid number " + std::to_string(v));
+            throw std::invalid_argument("Can't fill the grid. Invalid number " + std::to_string(v));
         }
         m_sudoku.push_back(v);
     }
@@ -94,7 +94,7 @@ void SudokuGrid::FillGrid(const std::vector<int>& values)
 std::vector<int> SudokuGrid::Neighbours(int row_col) const
 {
     if (row_col < 0 || row_col > 2) {
-        throw std::invalid_argument("Invalid row or col value " + std::to_string(row_col));
+        throw std::invalid_argument("Can't find a neighbour. Invalid row or col value " + std::to_string(row_col));
     }
     std::vector<int> rows_cols = { 0, 1, 2 };
     rows_cols.erase(std::find(rows_cols.begin(), rows_cols.end(), row_col));
@@ -162,26 +162,20 @@ std::ostream& operator<<(std::ostream& out, const SudokuGrid& grid)
 
 // ----------------------------------------------------------------------------
 
-Sudoku::Sudoku(const std::vector<int>& values)
-    : SudokuGrid(values)
+SudokuError SudokuValidity::IsSudokuValid(const SudokuGrid& grid)
 {
-
-}
-
-SudokuError Sudoku::IsSudokuValid() const
-{
-    SudokuError rows_error = IsRowsValid();
-    SudokuError cols_error = IsColsValid();
-    SudokuError squares_error = IsSquaresValid();
+    SudokuError rows_error = IsRowsValid(grid);
+    SudokuError cols_error = IsColsValid(grid);
+    SudokuError squares_error = IsSquaresValid(grid);
     return rows_error + cols_error + squares_error;
 }
 
-SudokuError Sudoku::IsRowsValid() const
+SudokuError SudokuValidity::IsRowsValid(const SudokuGrid& grid)
 {
     SudokuError error;
     for (int row = 0; row < 9; ++row)
     {
-        error = IsRowValid(row);
+        error = IsRowValid(grid, row);
         if (!error)
         {
             break;
@@ -190,12 +184,12 @@ SudokuError Sudoku::IsRowsValid() const
     return error;
 }
 
-SudokuError Sudoku::IsColsValid() const
+SudokuError SudokuValidity::IsColsValid(const SudokuGrid& grid)
 {
     SudokuError error;
     for (int col = 0; col < 9; ++col)
     {
-        error = IsColValid(col);
+        error = IsColValid(grid, col);
         if (!error)
         {
             break;
@@ -204,12 +198,12 @@ SudokuError Sudoku::IsColsValid() const
     return error;
 }
 
-SudokuError Sudoku::IsSquaresValid() const
+SudokuError SudokuValidity::IsSquaresValid(const SudokuGrid& grid)
 {
     SudokuError error;
-    for (const SudokuSquare& square : Squares())
+    for (const SudokuSquare& square : grid.Squares())
     {
-        error = IsSquareValid(square);
+        error = IsSquareValid(grid, square);
         if (!error)
         {
             break;
@@ -218,13 +212,13 @@ SudokuError Sudoku::IsSquaresValid() const
     return error;
 }
 
-SudokuError Sudoku::IsRowValid(int row) const
+SudokuError SudokuValidity::IsRowValid(const SudokuGrid& grid, int row)
 {
     int col_values[9];
     std::fill_n(std::begin(col_values), 9, 0);
     for (int col = 0; col < 9; ++col)
     {
-        int value = (*this)(row, col);
+        int value = grid(row, col);
         if (value == 0)
         {
             continue;
@@ -240,13 +234,13 @@ SudokuError Sudoku::IsRowValid(int row) const
     return { true, ""s };
 }
 
-SudokuError Sudoku::IsColValid(int col) const
+SudokuError SudokuValidity::IsColValid(const SudokuGrid& grid, int col)
 {
     int row_values[9];
     std::fill_n(std::begin(row_values), 9, 0);
     for (int row = 0; row < 9; ++row)
     {
-        int value = (*this)(row, col);
+        int value = grid(row, col);
         if (value == 0)
         {
             continue;
@@ -262,7 +256,7 @@ SudokuError Sudoku::IsColValid(int col) const
     return { true, ""s };
 }
 
-SudokuError Sudoku::IsSquareValid(const SudokuSquare& square) const
+SudokuError SudokuValidity::IsSquareValid(const SudokuGrid& grid, const SudokuSquare& square)
 {
     int square_values[9];
     std::fill_n(std::begin(square_values), 9, 0);
@@ -270,7 +264,7 @@ SudokuError Sudoku::IsSquareValid(const SudokuSquare& square) const
     {
         for (int col = square.col_begin; col < square.col_end; ++col)
         {
-            int value = (*this)(row, col);
+            int value = grid(row, col);
             if (value == 0)
             {
                 continue;
@@ -285,6 +279,19 @@ SudokuError Sudoku::IsSquareValid(const SudokuSquare& square) const
         }
     }
     return { true, ""s };
+}
+
+// ----------------------------------------------------------------------------
+
+Sudoku::Sudoku(const std::vector<int>& values)
+    : SudokuGrid(values)
+{
+
+}
+
+SudokuError Sudoku::IsSudokuValid() const
+{
+    return SudokuValidity::IsSudokuValid(*this);
 }
 
 bool Sudoku::HasRowNumber(int row, int number) const
@@ -547,7 +554,6 @@ SudokuResult SudokuSolver::Solve()
     if (!res)
     {
         std::cout << m_sudoku << std::endl;
-        ;
     }
 
     result.error = m_sudoku.IsSudokuValid();

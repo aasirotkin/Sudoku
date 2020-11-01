@@ -92,20 +92,29 @@ std::ostream& operator<<(std::ostream& out, const SudokuGrid& grid);
 
 // ----------------------------------------------------------------------------
 
+class SudokuValidity
+{
+public:
+    static SudokuError IsSudokuValid(const SudokuGrid& grid);
+
+private:
+    static SudokuError IsRowsValid(const SudokuGrid& grid);
+    static SudokuError IsColsValid(const SudokuGrid& grid);
+    static SudokuError IsSquaresValid(const SudokuGrid& grid);
+
+    static SudokuError IsRowValid(const SudokuGrid& grid, int row);
+    static SudokuError IsColValid(const SudokuGrid& grid, int col);
+    static SudokuError IsSquareValid(const SudokuGrid& grid, const SudokuSquare& square);
+};
+
+// ----------------------------------------------------------------------------
+
 class Sudoku : public SudokuGrid
 {
 public:
     explicit Sudoku(const std::vector<int>& values);
 
     SudokuError IsSudokuValid() const;
-
-    SudokuError IsRowsValid() const;
-    SudokuError IsColsValid() const;
-    SudokuError IsSquaresValid() const;
-
-    SudokuError IsRowValid(int row) const;
-    SudokuError IsColValid(int col) const;
-    SudokuError IsSquareValid(const SudokuSquare& square) const;
 
     bool HasRowNumber(int row, int number) const;
     bool HasColNumber(int col, int number) const;
