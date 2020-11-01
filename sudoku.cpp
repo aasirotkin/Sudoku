@@ -7,24 +7,20 @@
 
 using namespace std::string_literals;
 
-SudokuError operator+(const SudokuError &lhs, const SudokuError &rhs)
+SudokuError operator+(const SudokuError& lhs, const SudokuError& rhs)
 {
     SudokuError error;
-    error.is_valid = lhs.is_valid && rhs.is_valid;
-    if (!lhs)
+    error.is_error = lhs.is_error && rhs.is_error;
+    if (lhs)
     {
         error.name += lhs.name;
-        if (!rhs)
-        {
-            error.name += std::string("\n") + rhs.name;
-        }
     }
-    else
+    if (rhs)
     {
-        if (!rhs)
-        {
-            error.name += rhs.name;
+        if (lhs) {
+            error.name += "\n"s;
         }
+        error.name += rhs.name;
     }
     return error;
 }
@@ -39,7 +35,7 @@ void SudokuResult::Print() const
     }
 }
 
-std::ostream &operator<<(std::ostream &out, const SudokuResult &result)
+std::ostream& operator<<(std::ostream& out, const SudokuResult& result)
 {
     if (result.error)
     {
@@ -59,44 +55,48 @@ std::ostream &operator<<(std::ostream &out, const SudokuResult &result)
 
 std::string SudokuSquare::Str() const
 {
-    return "{ "s + std::to_string(row_begin) + ", "s + std::to_string(row_end) + ", "s + std::to_string(col_begin) +
-           ", "s + std::to_string(col_end) + " }"s;
+    return "{ "s + std::to_string(row_begin) + ", "s + std::to_string(row_end) + ", "s +
+        std::to_string(col_begin) + ", "s + std::to_string(col_end) + " }"s;
 }
 
 // ----------------------------------------------------------------------------
 
-SudokuGrid::SudokuGrid()
+SudokuGrid::SudokuGrid(const std::vector<int>& values)
 {
+    FillGrid(values);
     CreateSquares();
 }
 
-int &SudokuGrid::operator()(int row, int col)
+int& SudokuGrid::operator()(int row, int col)
 {
     return m_sudoku[Index(row, col)];
 }
 
-const int &SudokuGrid::operator()(int row, int col) const
+const int& SudokuGrid::operator()(int row, int col) const
 {
     return m_sudoku.at(Index(row, col));
 }
 
-void SudokuGrid::PushBack(int number)
+void SudokuGrid::FillGrid(const std::vector<int>& values)
 {
-    if (number < 0 || number > 9)
+    if (values.size() != 81)
     {
-        throw std::invalid_argument("Invalid number " + std::to_string(number));
+        throw std::invalid_argument("Input vector size must be 81"s);
     }
-    m_sudoku.push_back(number);
-}
-
-const std::vector<SudokuSquare> &SudokuGrid::Squares() const
-{
-    return m_squares;
+    for (int v : values) {
+        if (v < 0 || v > 9) {
+            throw std::invalid_argument("Invalid number " + std::to_string(v));
+        }
+        m_sudoku.push_back(v);
+    }
 }
 
 std::vector<int> SudokuGrid::Neighbours(int row_col) const
 {
-    std::vector<int> rows_cols = {0, 1, 2};
+    if (row_col < 0 || row_col > 2) {
+        throw std::invalid_argument("Invalid row or col value " + std::to_string(row_col));
+    }
+    std::vector<int> rows_cols = { 0, 1, 2 };
     rows_cols.erase(std::find(rows_cols.begin(), rows_cols.end(), row_col));
     return rows_cols;
 }
@@ -113,7 +113,7 @@ void SudokuGrid::CreateSquares()
     {
         for (int col = 0, local_col = 0; col < 9; col = col + 3, ++local_col)
         {
-            m_squares.push_back({row, row + 3, col, col + 3, local_row, local_col});
+            m_squares.push_back({ row, row + 3, col, col + 3, local_row, local_col });
         }
     }
 }
@@ -130,12 +130,12 @@ void SudokuGrid::IsRowColValid(int row, int col) const
     }
 }
 
-bool operator==(const SudokuGrid &lhs, const SudokuGrid &rhs)
+bool operator==(const SudokuGrid& lhs, const SudokuGrid& rhs)
 {
     return lhs.Values() == rhs.Values();
 }
 
-std::ostream &operator<<(std::ostream &out, const SudokuGrid &grid)
+std::ostream& operator<<(std::ostream& out, const SudokuGrid& grid)
 {
     const std::string row_splitter("-------------------------------");
     out << row_splitter << std::endl;
@@ -162,21 +162,10 @@ std::ostream &operator<<(std::ostream &out, const SudokuGrid &grid)
 
 // ----------------------------------------------------------------------------
 
-Sudoku::Sudoku(const std::vector<int> &values)
+Sudoku::Sudoku(const std::vector<int>& values)
+    : SudokuGrid(values)
 {
-    CreateSudoku(values);
-}
 
-void Sudoku::CreateSudoku(const std::vector<int> &values)
-{
-    if (values.size() != 81)
-    {
-        throw std::invalid_argument("Input vector size must be 81"s);
-    }
-    for (int number : values)
-    {
-        PushBack(number);
-    }
 }
 
 SudokuError Sudoku::IsSudokuValid() const
@@ -218,7 +207,7 @@ SudokuError Sudoku::IsColsValid() const
 SudokuError Sudoku::IsSquaresValid() const
 {
     SudokuError error;
-    for (const SudokuSquare &square : Squares())
+    for (const SudokuSquare& square : Squares())
     {
         error = IsSquareValid(square);
         if (!error)
@@ -243,12 +232,12 @@ SudokuError Sudoku::IsRowValid(int row) const
         int index = value - 1;
         if (col_values[index] > 0)
         {
-            return {false, "Number "s + std::to_string(value) + " has appeared in the row "s + std::to_string(row) +
-                               " at least twice"s};
+            return { false, "Number "s + std::to_string(value) + " has appeared in the row "s + std::to_string(row) +
+                               " at least twice"s };
         }
         col_values[index] = value;
     }
-    return {true, ""s};
+    return { true, ""s };
 }
 
 SudokuError Sudoku::IsColValid(int col) const
@@ -265,15 +254,15 @@ SudokuError Sudoku::IsColValid(int col) const
         int index = value - 1;
         if (row_values[index] > 0)
         {
-            return {false, "Number "s + std::to_string(value) + " has appeared in the col "s + std::to_string(col) +
-                               " at least twice"s};
+            return { false, "Number "s + std::to_string(value) + " has appeared in the col "s + std::to_string(col) +
+                               " at least twice"s };
         }
         row_values[index] = value;
     }
-    return {true, ""s};
+    return { true, ""s };
 }
 
-SudokuError Sudoku::IsSquareValid(const SudokuSquare &square) const
+SudokuError Sudoku::IsSquareValid(const SudokuSquare& square) const
 {
     int square_values[9];
     std::fill_n(std::begin(square_values), 9, 0);
@@ -289,13 +278,13 @@ SudokuError Sudoku::IsSquareValid(const SudokuSquare &square) const
             int index = value - 1;
             if (square_values[index] > 0)
             {
-                return {false, "Number "s + std::to_string(value) + " has appeared in the square "s + square.Str() +
-                                   " at least twice"s};
+                return { false, "Number "s + std::to_string(value) + " has appeared in the square "s + square.Str() +
+                                   " at least twice"s };
             }
             square_values[index] = value;
         }
     }
-    return {true, ""s};
+    return { true, ""s };
 }
 
 bool Sudoku::HasRowNumber(int row, int number) const
@@ -322,7 +311,7 @@ bool Sudoku::HasColNumber(int col, int number) const
     return false;
 }
 
-bool Sudoku::HasSquareNumber(const SudokuSquare &square, int number) const
+bool Sudoku::HasSquareNumber(const SudokuSquare& square, int number) const
 {
     for (int row = square.row_begin; row < square.row_end; ++row)
     {
@@ -337,7 +326,7 @@ bool Sudoku::HasSquareNumber(const SudokuSquare &square, int number) const
     return false;
 }
 
-std::vector<int> Sudoku::AvailableRows(int number, const SudokuSquare &square) const
+std::vector<int> Sudoku::AvailableRows(int number, const SudokuSquare& square) const
 {
     std::vector<int> available_rows;
     for (int row = square.row_begin; row < square.row_end; ++row)
@@ -362,9 +351,9 @@ std::vector<int> Sudoku::AvailableRows(int number, const SudokuSquare &square) c
     return available_rows;
 }
 
-Sudoku::SudokuFoundPlace Sudoku::SearchUsingCrossingOut(const SudokuSquare &square, int number)
+Sudoku::SudokuFoundPlace Sudoku::SearchUsingCrossingOut(const SudokuSquare& square, int number)
 {
-    SudokuFoundPlace place = {false, 0, 0};
+    SudokuFoundPlace place = { false, 0, 0 };
     for (int row = square.row_begin; row < square.row_end; ++row)
     {
         if (HasRowNumber(row, number))
@@ -379,11 +368,11 @@ Sudoku::SudokuFoundPlace Sudoku::SearchUsingCrossingOut(const SudokuSquare &squa
                 {
                     if (!place)
                     {
-                        place = {true, row, col};
+                        place = { true, row, col };
                     }
                     else
                     {
-                        return {false, 0, 0};
+                        return { false, 0, 0 };
                     }
                 }
             }
@@ -392,7 +381,7 @@ Sudoku::SudokuFoundPlace Sudoku::SearchUsingCrossingOut(const SudokuSquare &squa
     return place;
 }
 
-Sudoku::SudokuFoundPlace Sudoku::SearchUsingDoubleGuess(const SudokuSquare &square, int number)
+Sudoku::SudokuFoundPlace Sudoku::SearchUsingDoubleGuess(const SudokuSquare& square, int number)
 {
     std::vector<int> res_v;
     const std::vector<int> col_neighbours = Neighbours(square.col);
@@ -407,7 +396,7 @@ Sudoku::SudokuFoundPlace Sudoku::SearchUsingDoubleGuess(const SudokuSquare &squa
     if (available_rows_1.size() == 2 && available_rows_1 == available_rows_2 && available_rows_0 != available_rows_1)
     {
         std::set_difference(available_rows_0.begin(), available_rows_0.end(), available_rows_1.begin(),
-                            available_rows_1.end(), std::back_inserter(res_v));
+            available_rows_1.end(), std::back_inserter(res_v));
     }
     else
     {
@@ -416,7 +405,7 @@ Sudoku::SudokuFoundPlace Sudoku::SearchUsingDoubleGuess(const SudokuSquare &squa
             if (available_rows_1.size() == 1)
             {
                 std::set_difference(available_rows_0.begin(), available_rows_0.end(), available_rows_1.begin(),
-                                    available_rows_1.end(), std::back_inserter(res_v));
+                    available_rows_1.end(), std::back_inserter(res_v));
             }
         }
         if (available_rows_0.size() == 2)
@@ -424,14 +413,14 @@ Sudoku::SudokuFoundPlace Sudoku::SearchUsingDoubleGuess(const SudokuSquare &squa
             if (available_rows_2.size() == 1)
             {
                 std::set_difference(available_rows_0.begin(), available_rows_0.end(), available_rows_2.begin(),
-                                    available_rows_2.end(), std::back_inserter(res_v));
+                    available_rows_2.end(), std::back_inserter(res_v));
             }
         }
     }
 
     if (res_v.size() != 1)
     {
-        return {false, 0, 0};
+        return { false, 0, 0 };
     }
 
     int final_row = res_v.front();
@@ -443,22 +432,22 @@ Sudoku::SudokuFoundPlace Sudoku::SearchUsingDoubleGuess(const SudokuSquare &squa
         {
             if (res)
             {
-                return {false, 0, 0};
+                return { false, 0, 0 };
             }
             final_col = col;
             res = true;
         }
     }
-    return {res, final_row, final_col};
+    return { res, final_row, final_col };
 }
 
 // ----------------------------------------------------------------------------
 
-SudokuPopularity::SudokuPopularity(const Sudoku &sudoku)
+SudokuPopularity::SudokuPopularity(const Sudoku& sudoku)
 {
     for (int number = 1; number <= 9; ++number)
     {
-        m_number_popularity.push_back({number, 0});
+        m_number_popularity.push_back({ number, 0 });
     }
     for (int row = 0; row < 9; ++row)
     {
@@ -477,29 +466,29 @@ SudokuPopularity::SudokuPopularity(const Sudoku &sudoku)
 void SudokuPopularity::SortPopularity()
 {
     std::sort(m_number_popularity.begin(), m_number_popularity.end(),
-              [](const std::pair<int, int> &lhs, const std::pair<int, int> &rhs) {
-                  if (lhs.second == rhs.second)
-                  {
-                      return lhs.first < rhs.first;
-                  }
-                  else
-                  {
-                      return lhs.second > rhs.second;
-                  }
-              });
+        [](const std::pair<int, int>& lhs, const std::pair<int, int>& rhs) {
+            if (lhs.second == rhs.second)
+            {
+                return lhs.first < rhs.first;
+            }
+            else
+            {
+                return lhs.second > rhs.second;
+            }
+        });
 }
 
 void SudokuPopularity::ErasePopularity()
 {
     m_number_popularity.erase(
         std::remove_if(m_number_popularity.begin(), m_number_popularity.end(),
-                       [](const std::pair<int, int> &number_popularity) { return number_popularity.second == 9; }),
+            [](const std::pair<int, int>& number_popularity) { return number_popularity.second == 9; }),
         m_number_popularity.end());
 }
 
 void SudokuPopularity::IncreasePolularity(int number)
 {
-    for (auto &[value, popularity] : m_number_popularity)
+    for (auto& [value, popularity] : m_number_popularity)
     {
         if (value == number)
         {
@@ -511,7 +500,7 @@ void SudokuPopularity::IncreasePolularity(int number)
 
 // ----------------------------------------------------------------------------
 
-SudokuSolver::SudokuSolver(Sudoku &sudoku) : m_sudoku(sudoku), m_popularity(sudoku)
+SudokuSolver::SudokuSolver(Sudoku& sudoku) : m_sudoku(sudoku), m_popularity(sudoku)
 {
 }
 
@@ -565,10 +554,10 @@ SudokuResult SudokuSolver::Solve()
     return result;
 }
 
-bool SudokuSolver::SolveCrossingOut(int number, std::vector<std::string> &solutions)
+bool SudokuSolver::SolveCrossingOut(int number, std::vector<std::string>& solutions)
 {
     bool res = false;
-    for (const auto &square : m_sudoku.Squares())
+    for (const auto& square : m_sudoku.Squares())
     {
         if (!m_sudoku.HasSquareNumber(square, number))
         {
@@ -579,17 +568,17 @@ bool SudokuSolver::SolveCrossingOut(int number, std::vector<std::string> &soluti
                 m_popularity.IncreasePolularity(number);
                 res = true;
                 solutions.push_back("Put number "s + std::to_string(number) + " in row "s + std::to_string(place.row) +
-                                    " col "s + std::to_string(place.col));
+                    " col "s + std::to_string(place.col));
             }
         }
     }
     return res;
 }
 
-bool SudokuSolver::SolveDoubleGuess(int number, std::vector<std::string> &solutions)
+bool SudokuSolver::SolveDoubleGuess(int number, std::vector<std::string>& solutions)
 {
     bool res = false;
-    for (const auto &square : m_sudoku.Squares())
+    for (const auto& square : m_sudoku.Squares())
     {
         if (!m_sudoku.HasSquareNumber(square, number))
         {
@@ -600,7 +589,7 @@ bool SudokuSolver::SolveDoubleGuess(int number, std::vector<std::string> &soluti
                 m_popularity.IncreasePolularity(number);
                 res = true;
                 solutions.push_back("Put number "s + std::to_string(number) + " in row "s + std::to_string(place.row) +
-                                    " col "s + std::to_string(place.col));
+                    " col "s + std::to_string(place.col));
             }
         }
     }

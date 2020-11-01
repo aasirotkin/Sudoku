@@ -323,7 +323,7 @@ static SudokuTest::SudokuTestData data_medium = {
         }
     },
 
-    {
+    { // 4
         {
             2,7,0, 0,0,0, 0,1,0,
             9,0,0, 7,0,4, 0,0,0,
@@ -353,7 +353,7 @@ static SudokuTest::SudokuTestData data_medium = {
         }
     },
 
-    {
+    { // 5
         {
             0,3,0, 0,5,4, 0,0,0,
             0,0,0, 0,0,0, 0,2,3,
@@ -476,7 +476,7 @@ void SudokuTest::TestSudokuExtream()
     TestSudokuLocalData(data_extream, "TestSudokuExtream"s);
 }
 
-void SudokuTest::TestSudokuLocalData(const SudokuTestData& data, std::string& test_name)
+void SudokuTest::TestSudokuLocalData(const SudokuTestData& data, const std::string& test_name)
 {
     for (const auto& [input_data, result_data] : data) {
         Sudoku input(input_data);

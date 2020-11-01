@@ -17,6 +17,6 @@ public:
     static void TestSudokuExtream();
 
 private:
-    static void TestSudokuLocalData(const SudokuTestData& data, std::string& test_name);
+    static void TestSudokuLocalData(const SudokuTestData& data, const std::string& test_name);
 };
 
