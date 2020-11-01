@@ -10,12 +10,13 @@ struct SudokuError
     bool is_valid = true;
     std::string name = std::string("");
 
-    operator bool() const {
+    operator bool() const
+    {
         return !is_valid;
     }
 };
 
-SudokuError operator+ (const SudokuError& lhs, const SudokuError& rhs);
+SudokuError operator+(const SudokuError &lhs, const SudokuError &rhs);
 
 // ----------------------------------------------------------------------------
 
@@ -28,20 +29,27 @@ struct SudokuResult
 
     void Print() const;
 
-    operator bool() const {
+    operator bool() const
+    {
         return error;
     }
 };
 
-std::ostream& operator<< (std::ostream& out, const SudokuResult& result);
+std::ostream &operator<<(std::ostream &out, const SudokuResult &result);
 
 // ----------------------------------------------------------------------------
 
-struct SudokuSquare {
+struct SudokuSquare
+{
+    // global (in grid 9x9)
     int row_begin;
     int row_end;
     int col_begin;
     int col_end;
+
+    // local (in grid 3x3)
+    int row;
+    int col;
 
     std::string Str() const;
 };
@@ -50,40 +58,43 @@ struct SudokuSquare {
 
 class SudokuGrid
 {
-public:
+  public:
     SudokuGrid();
 
-    int& operator() (int row, int col);
-    const int& operator() (int row, int col) const;
+    int &operator()(int row, int col);
+    const int &operator()(int row, int col) const;
 
     void PushBack(int number);
 
-    const std::vector<SudokuSquare>& Squares() const;
+    const std::vector<SudokuSquare> &Squares() const;
 
-    const std::vector<int>& Values() const {
+    const std::vector<int> &Values() const
+    {
         return m_sudoku;
     }
 
-private:
+    std::vector<int> Neighbours(int row_col) const;
+
+  private:
     int Index(int row, int col) const;
     void CreateSquares();
     void IsRowColValid(int row, int col) const;
 
-private:
+  private:
     std::vector<SudokuSquare> m_squares;
     std::vector<int> m_sudoku;
 };
 
-bool operator== (const SudokuGrid& lhs, const SudokuGrid& rhs);
+bool operator==(const SudokuGrid &lhs, const SudokuGrid &rhs);
 
-std::ostream& operator<< (std::ostream& out, const SudokuGrid& grid);
+std::ostream &operator<<(std::ostream &out, const SudokuGrid &grid);
 
 // ----------------------------------------------------------------------------
 
 class Sudoku : public SudokuGrid
 {
-public:
-    explicit Sudoku(const std::vector<int>& values);
+  public:
+    explicit Sudoku(const std::vector<int> &values);
 
     SudokuError IsSudokuValid() const;
 
@@ -93,55 +104,63 @@ public:
 
     SudokuError IsRowValid(int row) const;
     SudokuError IsColValid(int col) const;
-    SudokuError IsSquareValid(const SudokuSquare& square) const;
+    SudokuError IsSquareValid(const SudokuSquare &square) const;
 
-    bool HasRowNumber(int row, int number);
-    bool HasColNumber(int col, int number);
-    bool HasSquareNumber(const SudokuSquare& square, int number);
+    bool HasRowNumber(int row, int number) const;
+    bool HasColNumber(int col, int number) const;
+    bool HasSquareNumber(const SudokuSquare &square, int number) const;
 
-    struct SudokuFoundPlace {
+    std::vector<int> AvailableRows(int number, const SudokuSquare &square) const;
+
+    struct SudokuFoundPlace
+    {
         bool was_found;
         int row;
         int col;
 
-        operator bool() const {
+        operator bool() const
+        {
             return was_found;
         }
     };
 
-    SudokuFoundPlace SearchForSinglePlaceInSquare(const SudokuSquare& square, int number);
+    SudokuFoundPlace SearchUsingCrossingOut(const SudokuSquare &square, int number);
+    SudokuFoundPlace SearchUsingDoubleGuess(const SudokuSquare &square, int number);
 
-private:
+  private:
     Sudoku() = default;
 
-private:
-    void CreateSudoku(const std::vector<int>& values);
+  private:
+    void CreateSudoku(const std::vector<int> &values);
 };
 
 // ----------------------------------------------------------------------------
 
 class SudokuPopularity
 {
-public:
-    SudokuPopularity(const Sudoku& sudoku);
+  public:
+    SudokuPopularity(const Sudoku &sudoku);
 
     void SortPopularity();
     void ErasePopularity();
     void IncreasePolularity(int number);
 
-    bool IsEmpty() const {
+    bool IsEmpty() const
+    {
         return m_number_popularity.empty();
     }
 
-    const auto begin() const {
+    const auto begin() const
+    {
         return m_number_popularity.begin();
     }
 
-    const auto end() const {
+    const auto end() const
+    {
         return m_number_popularity.end();
     }
 
-private:
+  private:
     std::vector<std::pair<int, int>> m_number_popularity;
 };
 
@@ -149,19 +168,18 @@ private:
 
 class SudokuSolver
 {
-public:
-    SudokuSolver(Sudoku& sudoku);
+  public:
+    SudokuSolver(Sudoku &sudoku);
 
     SudokuResult Solve();
 
-private:
+  private:
+    bool SolveCrossingOut(int number, std::vector<std::string> &solutions);
+    bool SolveDoubleGuess(int number, std::vector<std::string> &solutions);
 
-    bool SolveCrossingOut(int number, std::vector<std::string>& solutions);
-
-private:
-    Sudoku& m_sudoku;
+  private:
+    Sudoku &m_sudoku;
     SudokuPopularity m_popularity;
 };
-
 
 #endif // SUDOKU_H
