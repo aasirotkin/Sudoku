@@ -247,7 +247,7 @@ static SudokuTest::SudokuTestData data_medium = {
             0,0,0, 0,0,1, 0,0,7,
             0,3,0, 4,9,0, 0,2,1
         },
-     
+
         {
             8,2,3, 5,1,9, 7,4,6,
             4,5,9, 7,3,6, 2,1,8,
@@ -478,12 +478,19 @@ void SudokuTest::TestSudokuExtream()
 
 void SudokuTest::TestSudokuLocalData(const SudokuTestData& data, const std::string& test_name)
 {
-    for (const auto& [input_data, result_data] : data) {
+    for (const auto& [input_data, solved_data] : data) {
         Sudoku input(input_data);
-        Sudoku result(result_data);
+        Sudoku solved(solved_data);
         SudokuSolver solver(input);
-        solver.Solve();
-        assert(input == result);
+        SudokuResult result = solver.Solve();
+        if (!result) {
+            std::cout << result << std::endl;
+            abort();
+        }
+        if (input != solved) {
+            std::cout << input << std::endl;
+            abort();
+        }
     }
     std::cout << test_name << " Ok"s << std::endl;
 }

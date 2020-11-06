@@ -135,6 +135,11 @@ bool operator==(const SudokuGrid& lhs, const SudokuGrid& rhs)
     return lhs.Values() == rhs.Values();
 }
 
+bool operator!=(const SudokuGrid& lhs, const SudokuGrid& rhs)
+{
+    return !(lhs == rhs);
+}
+
 std::ostream& operator<<(std::ostream& out, const SudokuGrid& grid)
 {
     const std::string row_splitter("-------------------------------");
@@ -176,7 +181,7 @@ SudokuError SudokuValidity::IsRowsValid(const SudokuGrid& grid)
     for (int row = 0; row < 9; ++row)
     {
         error = IsRowValid(grid, row);
-        if (!error)
+        if (error)
         {
             break;
         }
@@ -190,7 +195,7 @@ SudokuError SudokuValidity::IsColsValid(const SudokuGrid& grid)
     for (int col = 0; col < 9; ++col)
     {
         error = IsColValid(grid, col);
-        if (!error)
+        if (error)
         {
             break;
         }
@@ -204,7 +209,7 @@ SudokuError SudokuValidity::IsSquaresValid(const SudokuGrid& grid)
     for (const SudokuSquare& square : grid.Squares())
     {
         error = IsSquareValid(grid, square);
-        if (!error)
+        if (error)
         {
             break;
         }
@@ -226,12 +231,12 @@ SudokuError SudokuValidity::IsRowValid(const SudokuGrid& grid, int row)
         int index = value - 1;
         if (col_values[index] > 0)
         {
-            return { false, "Number "s + std::to_string(value) + " has appeared in the row "s + std::to_string(row) +
-                               " at least twice"s };
+            return { true, "Number "s + std::to_string(value) + " has appeared in the row "s + std::to_string(row) +
+                           " at least twice"s };
         }
         col_values[index] = value;
     }
-    return { true, ""s };
+    return { false, ""s };
 }
 
 SudokuError SudokuValidity::IsColValid(const SudokuGrid& grid, int col)
@@ -248,12 +253,12 @@ SudokuError SudokuValidity::IsColValid(const SudokuGrid& grid, int col)
         int index = value - 1;
         if (row_values[index] > 0)
         {
-            return { false, "Number "s + std::to_string(value) + " has appeared in the col "s + std::to_string(col) +
-                               " at least twice"s };
+            return { true, "Number "s + std::to_string(value) + " has appeared in the col "s + std::to_string(col) +
+                           " at least twice"s };
         }
         row_values[index] = value;
     }
-    return { true, ""s };
+    return { false, ""s };
 }
 
 SudokuError SudokuValidity::IsSquareValid(const SudokuGrid& grid, const SudokuSquare& square)
@@ -272,13 +277,13 @@ SudokuError SudokuValidity::IsSquareValid(const SudokuGrid& grid, const SudokuSq
             int index = value - 1;
             if (square_values[index] > 0)
             {
-                return { false, "Number "s + std::to_string(value) + " has appeared in the square "s + square.Str() +
-                                   " at least twice"s };
+                return { true, "Number "s + std::to_string(value) + " has appeared in the square "s + square.Str() +
+                               " at least twice"s };
             }
             square_values[index] = value;
         }
     }
-    return { true, ""s };
+    return { false, ""s };
 }
 
 // ----------------------------------------------------------------------------
@@ -549,11 +554,6 @@ SudokuResult SudokuSolver::Solve()
         }
 
         m_popularity.ErasePopularity();
-    }
-
-    if (!res)
-    {
-        std::cout << m_sudoku << std::endl;
     }
 
     result.error = m_sudoku.IsSudokuValid();

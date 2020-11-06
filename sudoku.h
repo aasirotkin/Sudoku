@@ -31,7 +31,7 @@ struct SudokuResult
 
     operator bool() const
     {
-        return error;
+        return !error;
     }
 };
 
@@ -87,6 +87,7 @@ private:
 };
 
 bool operator==(const SudokuGrid& lhs, const SudokuGrid& rhs);
+bool operator!=(const SudokuGrid& lhs, const SudokuGrid& rhs);
 
 std::ostream& operator<<(std::ostream& out, const SudokuGrid& grid);
 
@@ -134,8 +135,8 @@ public:
         }
     };
 
-    SudokuFoundPlace SearchUsingCrossingOut(const SudokuSquare& square, int number);
-    SudokuFoundPlace SearchUsingDoubleGuess(const SudokuSquare& square, int number);
+    Sudoku::SudokuFoundPlace SearchUsingCrossingOut(const SudokuSquare& square, int number);
+    Sudoku::SudokuFoundPlace SearchUsingDoubleGuess(const SudokuSquare& square, int number);
 
 private:
     Sudoku() = default;
