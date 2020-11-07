@@ -122,6 +122,7 @@ public:
     bool HasSquareNumber(const SudokuSquare& square, int number) const;
 
     std::vector<int> AvailableRows(int number, const SudokuSquare& square) const;
+    std::vector<int> AvailableCols(int number, const SudokuSquare& square) const;
 
     struct SudokuFoundPlace
     {
@@ -137,6 +138,7 @@ public:
 
     Sudoku::SudokuFoundPlace SearchUsingCrossingOut(const SudokuSquare& square, int number);
     Sudoku::SudokuFoundPlace SearchUsingDoubleGuess(const SudokuSquare& square, int number);
+    Sudoku::SudokuFoundPlace SearchUsingTripleGuess(const SudokuSquare& square, int number);
 
 private:
     Sudoku() = default;
@@ -184,6 +186,8 @@ public:
 private:
     bool SolveCrossingOut(int number, std::vector<std::string>& solutions);
     bool SolveDoubleGuess(int number, std::vector<std::string>& solutions);
+    bool SolveTripleGuess(int number, std::vector<std::string>& solutions);
+
 
 private:
     Sudoku& m_sudoku;
