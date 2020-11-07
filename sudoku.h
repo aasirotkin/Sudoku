@@ -5,24 +5,24 @@
 #include <tuple>
 #include <vector>
 
-struct SudokuError
+struct SudokuValid
 {
-    bool is_error = false;
-    std::string name = std::string("");
+    bool is_valid = false;
+    std::string text = std::string("");
 
     operator bool() const
     {
-        return is_error;
+        return is_valid;
     }
 };
 
-SudokuError operator+(const SudokuError& lhs, const SudokuError& rhs);
+SudokuValid operator+(const SudokuValid& lhs, const SudokuValid& rhs);
 
 // ----------------------------------------------------------------------------
 
 struct SudokuResult
 {
-    SudokuError error = SudokuError();
+    SudokuValid valid = SudokuValid();
     std::vector<std::string> solution_steps;
 
     SudokuResult() = default;
@@ -31,7 +31,7 @@ struct SudokuResult
 
     operator bool() const
     {
-        return !error;
+        return valid;
     }
 };
 
@@ -93,19 +93,19 @@ std::ostream& operator<<(std::ostream& out, const SudokuGrid& grid);
 
 // ----------------------------------------------------------------------------
 
-class SudokuValidity
+class SudokuCheckValidity
 {
 public:
-    static SudokuError IsSudokuValid(const SudokuGrid& grid);
+    static SudokuValid IsSudokuValid(const SudokuGrid& grid);
 
 private:
-    static SudokuError IsRowsValid(const SudokuGrid& grid);
-    static SudokuError IsColsValid(const SudokuGrid& grid);
-    static SudokuError IsSquaresValid(const SudokuGrid& grid);
+    static SudokuValid IsRowsValid(const SudokuGrid& grid);
+    static SudokuValid IsColsValid(const SudokuGrid& grid);
+    static SudokuValid IsSquaresValid(const SudokuGrid& grid);
 
-    static SudokuError IsRowValid(const SudokuGrid& grid, int row);
-    static SudokuError IsColValid(const SudokuGrid& grid, int col);
-    static SudokuError IsSquareValid(const SudokuGrid& grid, const SudokuSquare& square);
+    static SudokuValid IsRowValid(const SudokuGrid& grid, int row);
+    static SudokuValid IsColValid(const SudokuGrid& grid, int col);
+    static SudokuValid IsSquareValid(const SudokuGrid& grid, const SudokuSquare& square);
 };
 
 // ----------------------------------------------------------------------------
@@ -115,7 +115,7 @@ class Sudoku : public SudokuGrid
 public:
     explicit Sudoku(const std::vector<int>& values);
 
-    SudokuError IsSudokuValid() const;
+    SudokuValid IsSudokuValid() const;
 
     bool HasRowNumber(int row, int number) const;
     bool HasColNumber(int col, int number) const;

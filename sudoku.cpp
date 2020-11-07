@@ -7,22 +7,22 @@
 
 using namespace std::string_literals;
 
-SudokuError operator+(const SudokuError& lhs, const SudokuError& rhs)
+SudokuValid operator+(const SudokuValid& lhs, const SudokuValid& rhs)
 {
-    SudokuError error;
-    error.is_error = lhs.is_error && rhs.is_error;
-    if (lhs)
+    SudokuValid valid;
+    valid.is_valid = lhs.is_valid && rhs.is_valid;
+    if (!lhs)
     {
-        error.name += lhs.name;
+        valid.text += lhs.text;
     }
-    if (rhs)
+    if (!rhs)
     {
-        if (lhs) {
-            error.name += "\n"s;
+        if (!lhs) {
+            valid.text += "\n"s;
         }
-        error.name += rhs.name;
+        valid.text += rhs.text;
     }
-    return error;
+    return valid;
 }
 
 // ----------------------------------------------------------------------------
@@ -37,10 +37,10 @@ void SudokuResult::Print() const
 
 std::ostream& operator<<(std::ostream& out, const SudokuResult& result)
 {
-    if (result.error)
+    if (!result.valid)
     {
         std::cout << "Errors:"s << std::endl;
-        std::cout << result.error.name << std::endl;
+        std::cout << result.valid.text << std::endl;
     }
     else
     {
@@ -167,57 +167,57 @@ std::ostream& operator<<(std::ostream& out, const SudokuGrid& grid)
 
 // ----------------------------------------------------------------------------
 
-SudokuError SudokuValidity::IsSudokuValid(const SudokuGrid& grid)
+SudokuValid SudokuCheckValidity::IsSudokuValid(const SudokuGrid& grid)
 {
-    SudokuError rows_error = IsRowsValid(grid);
-    SudokuError cols_error = IsColsValid(grid);
-    SudokuError squares_error = IsSquaresValid(grid);
-    return rows_error + cols_error + squares_error;
+    SudokuValid rows_valid = IsRowsValid(grid);
+    SudokuValid cols_valid = IsColsValid(grid);
+    SudokuValid squares_valid = IsSquaresValid(grid);
+    return rows_valid + cols_valid + squares_valid;
 }
 
-SudokuError SudokuValidity::IsRowsValid(const SudokuGrid& grid)
+SudokuValid SudokuCheckValidity::IsRowsValid(const SudokuGrid& grid)
 {
-    SudokuError error;
+    SudokuValid valid;
     for (int row = 0; row < 9; ++row)
     {
-        error = IsRowValid(grid, row);
-        if (error)
+        valid = IsRowValid(grid, row);
+        if (!valid)
         {
             break;
         }
     }
-    return error;
+    return valid;
 }
 
-SudokuError SudokuValidity::IsColsValid(const SudokuGrid& grid)
+SudokuValid SudokuCheckValidity::IsColsValid(const SudokuGrid& grid)
 {
-    SudokuError error;
+    SudokuValid valid;
     for (int col = 0; col < 9; ++col)
     {
-        error = IsColValid(grid, col);
-        if (error)
+        valid = IsColValid(grid, col);
+        if (!valid)
         {
             break;
         }
     }
-    return error;
+    return valid;
 }
 
-SudokuError SudokuValidity::IsSquaresValid(const SudokuGrid& grid)
+SudokuValid SudokuCheckValidity::IsSquaresValid(const SudokuGrid& grid)
 {
-    SudokuError error;
+    SudokuValid valid;
     for (const SudokuSquare& square : grid.Squares())
     {
-        error = IsSquareValid(grid, square);
-        if (error)
+        valid = IsSquareValid(grid, square);
+        if (!valid)
         {
             break;
         }
     }
-    return error;
+    return valid;
 }
 
-SudokuError SudokuValidity::IsRowValid(const SudokuGrid& grid, int row)
+SudokuValid SudokuCheckValidity::IsRowValid(const SudokuGrid& grid, int row)
 {
     int col_values[9];
     std::fill_n(std::begin(col_values), 9, 0);
@@ -231,15 +231,15 @@ SudokuError SudokuValidity::IsRowValid(const SudokuGrid& grid, int row)
         int index = value - 1;
         if (col_values[index] > 0)
         {
-            return { true, "Number "s + std::to_string(value) + " has appeared in the row "s + std::to_string(row) +
-                           " at least twice"s };
+            return { false, "Number "s + std::to_string(value) + " has appeared in the row "s + std::to_string(row) +
+                            " at least twice"s };
         }
         col_values[index] = value;
     }
-    return { false, ""s };
+    return { true, ""s };
 }
 
-SudokuError SudokuValidity::IsColValid(const SudokuGrid& grid, int col)
+SudokuValid SudokuCheckValidity::IsColValid(const SudokuGrid& grid, int col)
 {
     int row_values[9];
     std::fill_n(std::begin(row_values), 9, 0);
@@ -253,15 +253,15 @@ SudokuError SudokuValidity::IsColValid(const SudokuGrid& grid, int col)
         int index = value - 1;
         if (row_values[index] > 0)
         {
-            return { true, "Number "s + std::to_string(value) + " has appeared in the col "s + std::to_string(col) +
-                           " at least twice"s };
+            return { false, "Number "s + std::to_string(value) + " has appeared in the col "s + std::to_string(col) +
+                            " at least twice"s };
         }
         row_values[index] = value;
     }
-    return { false, ""s };
+    return { true, ""s };
 }
 
-SudokuError SudokuValidity::IsSquareValid(const SudokuGrid& grid, const SudokuSquare& square)
+SudokuValid SudokuCheckValidity::IsSquareValid(const SudokuGrid& grid, const SudokuSquare& square)
 {
     int square_values[9];
     std::fill_n(std::begin(square_values), 9, 0);
@@ -277,13 +277,13 @@ SudokuError SudokuValidity::IsSquareValid(const SudokuGrid& grid, const SudokuSq
             int index = value - 1;
             if (square_values[index] > 0)
             {
-                return { true, "Number "s + std::to_string(value) + " has appeared in the square "s + square.Str() +
-                               " at least twice"s };
+                return { false, "Number "s + std::to_string(value) + " has appeared in the square "s + square.Str() +
+                                " at least twice"s };
             }
             square_values[index] = value;
         }
     }
-    return { false, ""s };
+    return { true, ""s };
 }
 
 // ----------------------------------------------------------------------------
@@ -294,9 +294,9 @@ Sudoku::Sudoku(const std::vector<int>& values)
 
 }
 
-SudokuError Sudoku::IsSudokuValid() const
+SudokuValid Sudoku::IsSudokuValid() const
 {
-    return SudokuValidity::IsSudokuValid(*this);
+    return SudokuCheckValidity::IsSudokuValid(*this);
 }
 
 bool Sudoku::HasRowNumber(int row, int number) const
@@ -519,8 +519,8 @@ SudokuSolver::SudokuSolver(Sudoku& sudoku) : m_sudoku(sudoku), m_popularity(sudo
 SudokuResult SudokuSolver::Solve()
 {
     SudokuResult result;
-    result.error = m_sudoku.IsSudokuValid();
-    if (result.error)
+    result.valid = m_sudoku.IsSudokuValid();
+    if (!result.valid)
     {
         return result;
     }
@@ -556,7 +556,7 @@ SudokuResult SudokuSolver::Solve()
         m_popularity.ErasePopularity();
     }
 
-    result.error = m_sudoku.IsSudokuValid();
+    result.valid = m_sudoku.IsSudokuValid();
     return result;
 }
 
